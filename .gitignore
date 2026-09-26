@@ -1,0 +1,6 @@
+# Generados en runtime por los scripts — no versionar (incluyen secretos).
+.env
+config.json
+db-data/
+savedata/
+bin/

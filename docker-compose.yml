@@ -1,0 +1,68 @@
+# MHF local — stack del servidor (derivado de Erupe/docker/docker-compose.yml).
+# Uso: ./start-frontier.sh [up|logs|status|down|--wipe]  o  .\Start-Frontier.ps1
+# El password vive en .env (POSTGRES_PASSWORD) y se reutiliza en config.json.
+# pgAdmin es opt-in: docker compose --profile tools up
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no definido en .env}
+      - POSTGRES_DB=erupe
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db-data/:/var/lib/postgresql/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d erupe"]
+      interval: 5s
+      timeout: 5s
+      start_period: 5s
+      retries: 5
+  pgadmin:
+    image: dpage/pgadmin4
+    profiles: ["tools"]
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@pgadmin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+  server:
+    depends_on:
+      db:
+        condition: service_healthy
+    # Default: imagen construida localmente en la primera ejecución
+    # (contexto: checkout de Erupe junto a esta carpeta; el script lo clona solo si falta).
+    image: mhf-erupe:local
+    build:
+      context: ../Erupe
+    # Alternativa: imagen prebuilt (requiere acceso al package de GHCR;
+    # el pull anónimo hoy devuelve 401). Para usarla, comenta 'build'
+    # y descomenta la línea siguiente:
+    # image: ghcr.io/mezeporta/erupe:main
+    volumes:
+      - ./config.json:/app/config.json
+      - ./bin:/app/bin
+      - ./savedata:/app/savedata
+    ports:
+      - "53312:53312" # Sign V1
+      - "8080:8080"   # Sign V2 + /health
+      - "53310:53310" # Entrance
+      - "54001:54001"
+      - "54002:54002"
+      - "54003:54003"
+      - "54004:54004"
+      - "54005:54005"
+      - "54006:54006"
+      - "54007:54007"
+      - "54008:54008"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 15s
+      retries: 3

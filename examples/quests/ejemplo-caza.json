@@ -1,0 +1,41 @@
+{
+  "quest_id": 9001,
+  "title": "Caza de práctica",
+  "description": "Quest de ejemplo en español. Caza al monstruo marcado.",
+  "text_main": "Demuestra tu habilidad y caza a la presa.",
+  "text_sub_a": "",
+  "text_sub_b": "",
+  "success_cond": "Caza al objetivo principal.",
+  "fail_cond": "Se acaba el tiempo o caen todos los cazadores.",
+  "contractor": "Jefe del Gremio",
+  "monster_size_multi": 100,
+  "stat_table_1": 0,
+  "main_rank_points": 120,
+  "sub_a_rank_points": 0,
+  "sub_b_rank_points": 0,
+  "fee": 500,
+  "reward_main": 5000,
+  "reward_sub_a": 0,
+  "reward_sub_b": 0,
+  "time_limit_minutes": 50,
+  "map": 2,
+  "rank_band": 0,
+  "objective_main": {"type": "hunt", "target": 11, "count": 1},
+  "objective_sub_a": {"type": "none"},
+  "objective_sub_b": {"type": "none"},
+  "large_monsters": [
+    {"id": 11, "spawn_amount": 1, "spawn_stage": 5, "orientation": 180, "x": 1500.0, "y": 0.0, "z": -2000.0}
+  ],
+  "rewards": [
+    {"table_id": 1, "items": [
+      {"rate": 60, "item": 149, "quantity": 1},
+      {"rate": 40, "item": 153, "quantity": 1}
+    ]}
+  ],
+  "supply_main": [
+    {"item": 1, "quantity": 5}
+  ],
+  "stages": [
+    {"stage_id": 2}
+  ]
+}
