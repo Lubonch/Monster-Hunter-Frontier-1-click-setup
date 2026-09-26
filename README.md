@@ -26,6 +26,50 @@ incluido**: usa tus propios archivos.
 - Archivos de quests ([ver abajo](#archivos-de-quests)). Sin ellos el server
   arranca igual, pero el cliente falla al pedir quests.
 
+## Preparar Docker (una sola vez)
+
+### Linux
+
+```bash
+# Docker Engine oficial (Debian/Ubuntu; ajusta a tu distro)
+sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+# Cierra sesión y vuelve a entrar para que el grupo aplique
+```
+
+Alternativa sin sudo por comando: la de arriba (grupo `docker`) ya lo evita.
+
+### Windows — opción A: Docker Desktop (recomendado)
+
+1. Instala [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Activa el backend WSL2 (viene por defecto) e instala una distro Ubuntu
+   desde Microsoft Store si no tienes.
+3. Abre Docker Desktop y espera a que diga *running*.
+
+### Windows — opción B: solo WSL2, sin Desktop (liviano)
+
+```bash
+# Dentro de tu distro WSL2 (Ubuntu)
+sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo service docker start
+```
+
+Sin GUI ni telemetría; el script funciona igual.
+
+### Windows — opción C: Rancher Desktop
+
+Instala [Rancher Desktop](https://rancherdesktop.io/) (gratis y open-source),
+elige el runtime `dockerd (moby)` y listo.
+
+### Verificar (cualquier OS)
+
+```bash
+docker --version
+docker compose version
+docker info  # debe responder sin errores (en Windows: Desktop corriendo)
+```
+
 ## Uso rápido
 
 ```bash
