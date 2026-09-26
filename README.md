@@ -1,27 +1,39 @@
-# Servidor local MH Frontier — un solo click (Docker)
+# Monster Hunter Frontier — Servidor local en un click
 
-Levanta un servidor de Monster Hunter Frontier (Erupe) en tu máquina con un solo
-comando. Solo necesitas **Docker instalado**; el script construye la imagen,
-genera la configuración y arranca todo. El **cliente del juego no está incluido**:
-usa tus propios archivos y ábrelo por tu cuenta.
+Levanta un servidor privado de **Monster Hunter Frontier** ([Erupe](https://github.com/Mezeporta/Erupe))
+en tu máquina con un solo comando. El script construye la imagen, genera la
+configuración y arranca todo (Postgres + Erupe). El **cliente del juego no está
+incluido**: usa tus propios archivos.
+
+- [Requisitos](#requisitos) · [Uso rápido](#uso-rápido) · [Comandos](#comandos)
+- [Puertos](#puertos) · [Jugar en LAN](#jugar-en-lan)
+- [Quests](#archivos-de-quests) · [Quests custom](#crear-quests-custom)
+- [MHFZ-Launcher](#mhfz-launcher) · [Configuración](#configuración-del-server)
+- [Solución de problemas](#solución-de-problemas)
 
 ## Requisitos
 
-- Docker + Compose v2 (`docker compose version` debe responder).
-- Git (solo si el checkout de `Erupe` no está junto a esta carpeta: el script
+- **Docker + Compose v2** (`docker compose version` debe responder). Opciones:
+  | Opción | Notas |
+  |---|---|
+  | **Docker Desktop** (recomendado) | Cero fricción en Windows/Mac; en Windows requiere WSL2 |
+  | **Docker Engine en WSL2** (liviano) | `docker-ce` instalado en tu distro Linux/WSL, sin GUI ni telemetría; 100% compatible |
+  | **Rancher Desktop** | Reemplazo gratis y open-source de Desktop, con `compose` compatible |
+  | ⚠️ Podman | No recomendado: su compatibilidad con `compose` es parcial |
+- **Git** (solo si el código de `Erupe` no está junto a esta carpeta: el script
   lo clona solo con tu confirmación; `ERUPE_REPO` cambia el origen).
 - Puertos libres: `53310`, `53312`, `54001–54008`, `8080`, `5432`.
-- Archivos de quests (ver abajo). Sin ellos el server arranca igual, pero el
-  cliente falla al pedir quests.
+- Archivos de quests ([ver abajo](#archivos-de-quests)). Sin ellos el server
+  arranca igual, pero el cliente falla al pedir quests.
 
-## Uso rápido (Linux)
+## Uso rápido
 
 ```bash
-cd mhf-docker-oneclick
-./start-frontier.sh up
+./start-frontier.sh up     # Linux
+.\Start-Frontier.ps1 up    # Windows (Docker Desktop corriendo)
 ```
 
-La primera vez construye la imagen local desde el checkout de `Erupe` (tarda
+La primera vez construye la imagen local desde el código de `Erupe` (tarda
 unos minutos); las siguientes arranca en segundos. Al terminar verás:
 
 ```
@@ -29,11 +41,20 @@ FRONTIER READY
   Entrance: 127.0.0.1:53310 | Sign: 127.0.0.1:53312 | ...
 ```
 
-En Windows el equivalente es `.\Start-Frontier.ps1 up` (requiere Docker Desktop
-corriendo; si PowerShell bloquea el script:
-`powershell -ExecutionPolicy Bypass -File .\Start-Frontier.ps1 up`).
+> Windows: si PowerShell bloquea el script:
+> `powershell -ExecutionPolicy Bypass -File .\Start-Frontier.ps1 up`.
 
-## Puertos (qué es cada uno)
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `up [--build]` | Arranca el servidor (`--build` fuerza reconstrucción) |
+| `status` | Muestra contenedores + chequeo de `/health` |
+| `logs [args]` | Muestra logs (pasa args a `docker compose logs`) |
+| `down` | Detiene el servidor **conservando** personajes y mundo |
+| `--wipe` | Borra `db-data/` y `savedata/` (pide escribir `SI`); conserva `.env`, `config.json` y `bin/` |
+
+## Puertos
 
 | Puerto | Servicio | Quién lo usa |
 |---|---|---|
@@ -51,21 +72,11 @@ corriendo; si PowerShell bloquea el script:
 3. Reinicia: `docker compose restart server` (o `down` + `up`).
 4. En el cliente/launcher usa esa IP en vez de `127.0.0.1`.
 
-## Comandos
+## Archivos de quests
 
-| Comando | Qué hace |
-|---|---|
-| `up [--build]` | Arranca el servidor (`--build` fuerza reconstrucción) |
-| `status` | Muestra contenedores + chequeo de `/health` |
-| `logs [args]` | Muestra logs (pasa args a `docker compose logs`) |
-| `down` | Detiene el servidor **conservando** personajes y mundo |
-| `--wipe` | Borra `db-data/` y `savedata/` (pide escribir `SI`); conserva `.env`, `config.json` y `bin/` |
-
-## Archivos de quests (obligatorio para jugar)
-
-Si `bin/quests` está vacío, el script te pide la ruta del `.7z` y lo
-descomprime solo en `bin/` (necesita `7z`/`bsdtar` en Linux o 7-Zip en
-Windows; con Enter lo omites y te dice cómo hacerlo manual).
+Sin estos archivos el server arranca pero las quests no cargan. Si `bin/quests`
+está vacío, el script te pide la ruta del `.7z` y lo descomprime solo en `bin/`
+(necesita `7z`/`bsdtar` en Linux o 7-Zip en Windows; con Enter lo omites).
 
 Manual:
 
@@ -82,7 +93,7 @@ Manual:
 3. El `ClientMode` por defecto es `ZZ` (cámbialo en `config.json` si tu cliente
    es otra versión, p. ej. `G10`).
 
-### MHFZ-Launcher (opcional)
+### MHFZ-Launcher
 
 Al final del `up`, el script puede dejar tu
 [MHFZ-Launcher](https://github.com/mrsasy89/MHFZ-Launcher) apuntando al
@@ -102,12 +113,13 @@ curl -X POST http://localhost:8080/register \
 
 (el `/login` HTTP no auto-crea cuentas; el registro sí).
 
-## Qué genera el script (no lo edites a mano la primera vez)
+## Qué genera el script
 
 - `.env` — password de postgres, generado una vez y reutilizado.
 - `config.json` — derivado de `config.template.json` (`Database.Host=db`,
   `ClientMode=ZZ`).
-- `bin/`, `savedata/`, `db-data/` — datos y volúmenes persistentes.
+- `bin/`, `savedata/`, `db-data/` — datos y volúmenes persistentes (no se
+  versionan, ver `.gitignore`).
 
 ## Configuración del server
 
@@ -148,25 +160,8 @@ Ejemplo (doble rates + aviso custom):
 }
 ```
 
-⚠️ No toques `Database.*` (lo gestiona el script) salvo que sepas lo que haces;
-si rompes el `config.json`, bórralo y el próximo `up` lo regenera (se pierde
-tu tuning, guarda backup).
-
-## Solución de problemas
-
-- **`/health` no responde**: `docker compose logs server` (las migraciones de
-  la DB corren solas al arrancar).
-- **`db unhealthy` en el primer `up` (disco lento)**: en discos mecánicos el
-  `initdb` de postgres puede tardar minutos y el compose se rinde antes.
-  Espera y re-ejecuta `./start-frontier.sh up` (es idempotente, no reconstruye
-  nada) hasta ver `FRONTIER READY`.
-- **No conecta el cliente**: revisa `host.txt`, firewall en los puertos de
-  arriba y que el `ClientMode` coincida con tu cliente.
-- **`--wipe` pedía permisos**: el script lo reintenta vía Docker; si aún falla,
-  `sudo rm -rf db-data savedata`.
-- **Imagen prebuilt de GHCR**: queda como alternativa en `docker-compose.yml`;
-  su pull anónimo hoy es rechazado (401), por eso el default es build local.
-- **pgAdmin** (opcional): `docker compose --profile tools up` → `http://localhost:5050`.
+⚠️ No toques `Database.*` (lo gestiona el script). Si rompes el `config.json`,
+bórralo y el próximo `up` lo regenera (se pierde tu tuning, guarda backup).
 
 ## Crear quests custom
 
@@ -246,3 +241,26 @@ Notas:
 - **Scenarios**: mismo mecanismo en `bin/scenarios/<nombre>.json`, formato en
   `Erupe/docs/scenario-format.md`. El formato completo de quests está en la
   [wiki de Erupe](https://github.com/Mezeporta/Erupe/wiki).
+
+## Solución de problemas
+
+- **`/health` no responde**: `docker compose logs server` (las migraciones de
+  la DB corren solas al arrancar).
+- **`db unhealthy` en el primer `up` (disco lento)**: en discos mecánicos el
+  `initdb` de postgres puede tardar minutos y el compose se rinde antes.
+  Espera y re-ejecuta el `up` (es idempotente, no reconstruye nada) hasta ver
+  `FRONTIER READY`.
+- **No conecta el cliente**: revisa `host.txt`, firewall en los puertos de
+  arriba y que el `ClientMode` coincida con tu cliente.
+- **`--wipe` pedía permisos**: el script lo reintenta vía Docker; si aún falla,
+  `sudo rm -rf db-data savedata`.
+- **Imagen prebuilt de GHCR**: queda como alternativa en `docker-compose.yml`;
+  su pull anónimo hoy es rechazado (401), por eso el default es build local.
+- **pgAdmin** (opcional): `docker compose --profile tools up` → `http://localhost:5050`.
+
+## Stack y créditos
+
+- Servidor: [Erupe](https://github.com/Mezeporta/Erupe) (emulador open-source de
+  MHF, Go + Postgres).
+- Launcher opcional: [MHFZ-Launcher](https://github.com/mrsasy89/MHFZ-Launcher).
+- Este repo no incluye el cliente del juego ni assets de CAPCOM.
