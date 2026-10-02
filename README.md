@@ -301,6 +301,21 @@ Notas:
 - **Imagen prebuilt de GHCR**: queda como alternativa en `docker-compose.yml`;
   su pull anónimo hoy es rechazado (401), por eso el default es build local.
 - **pgAdmin** (opcional): `docker compose --profile tools up` → `http://localhost:5050`.
+- **Personaje corrupto tras error `2597` (nombre basura + todas las quests fallan igual)**:
+  el `2597` es un error del cliente ante un savedata inválido, no del server.
+  Suele venir de un blob corrupto que el server persistió con hash nuevo,
+  contaminando también los backups rotativos. No uses `--wipe` (borra todo).
+  Diagnóstico (solo lectura):
+  ```bash
+  docker compose logs server | grep "Correcting name mismatch in savedata"
+  docker compose exec db psql -U postgres -d erupe -c "SELECT id, name, length(savedata), last_login FROM characters WHERE id = <char_id>;"
+  docker compose exec db psql -U postgres -d erupe -c "SELECT slot, length(savedata), saved_at FROM savedata_backups WHERE char_id = <char_id> ORDER BY saved_at;"
+  ```
+  Si algún slot viejo tiene nombre sano, restaura **clon-primero**: backup con
+  `pg_dump`, `UPDATE` del slot sano + hash en el clon, verifica login y quests,
+  y recién entonces repite en prod. Desde el fix de quarantine el server
+  rechaza estos blobs (`Quarantined incoming savedata blob` en logs) sin pisar
+  el primary; el slot 0 de backups está reservado y nunca se auto-sobrescribe.
 
 ## Stack y créditos
 
